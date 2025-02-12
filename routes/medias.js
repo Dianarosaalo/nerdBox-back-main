@@ -65,6 +65,7 @@ router.post('/', (req, res) => {
         fechaCreacion:req.body.fechaCreacion,
         fechaModificacion:req.body.fechaModificacion,
 
+        anotaciones:req.body.anotaciones,
         review:req.body.review,
         tiempoJuego:req.body.tiempoJuego
 
@@ -100,6 +101,7 @@ router.put('/:id', (req, res) => {
         fechaCreacion:req.body.fechaCreacion,
         fechaModificacion:req.body.fechaModificacion,
 
+        anotaciones:req.body.anotaciones,
         review:req.body.review,
         tiempoJuego:req.body.tiempoJuego
         
@@ -107,7 +109,7 @@ router.put('/:id', (req, res) => {
     }, {new: true}).then(resultado => {
        
     }).catch(error => {
-        console.error({error: "Error modificando media"});
+        console.error({ error: "Error modifying media", details: error });
     });
 });
 

@@ -49,6 +49,9 @@ let mediasSchema= new mongoose.Schema({
     review:{
         type:String
     },
+    anotaciones:{
+        type:String
+    },
     tiempoJuego:{
         type:Number
     }
