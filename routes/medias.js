@@ -67,7 +67,9 @@ router.post('/', (req, res) => {
 
         anotaciones:req.body.anotaciones,
         review:req.body.review,
-        tiempoJuego:req.body.tiempoJuego
+        tiempoJuego:req.body.tiempoJuego,
+
+        nombrePersonal:req.body.nombrePersonal
 
         
     });
@@ -103,7 +105,9 @@ router.put('/:id', (req, res) => {
 
         anotaciones:req.body.anotaciones,
         review:req.body.review,
-        tiempoJuego:req.body.tiempoJuego
+        tiempoJuego:req.body.tiempoJuego,
+
+        nombrePersonal:req.body.nombrePersonal
         
         }
     }, {new: true}).then(resultado => {

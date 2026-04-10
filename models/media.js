@@ -54,6 +54,9 @@ let mediasSchema= new mongoose.Schema({
     },
     tiempoJuego:{
         type:Number
+    },
+    nombrePersonal:{
+        type:String
     }
 });
 
