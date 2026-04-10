@@ -4,6 +4,7 @@ const methodOverride = require('method-override');
 const cors = require("cors");
 
 const medias = require(__dirname + '/routes/medias');
+const listas = require(__dirname + '/routes/lists')
 
 mongoose.connect('mongodb://localhost:27017/nerdBox', 
     {useNewUrlParser: true});
@@ -24,5 +25,6 @@ app.use(methodOverride(function (req, res) {
 }));
 
 app.use('/medias', medias);
+app.use('/lists', listas)
 
 app.listen(8080);
