@@ -28,6 +28,29 @@ router.get('/busqueda', async (req, res) => {
     }
 });
 
+router.post('/batch', async (req, res) => {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids)) {
+        return res.status(400).json({ error: "ids must be an array" });
+    }
+
+    try {
+        const medias = await Media.find({
+            _id: { $in: ids }
+        });
+        
+        const mediasOrdenadas = ids.map(id =>
+            medias.find(m => m._id.toString() === id)
+        ).filter(Boolean);
+
+        res.status(200).send({ medias: mediasOrdenadas });
+
+    } catch (error) {
+        res.status(500).json({ error: 'Error retrieving medias' });
+    }
+});
+
 router.get('/:id', (req, res) => {
     Media.findById(req.params['id']).then(resultado => {
         res.status(200).send({media: resultado});
