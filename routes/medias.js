@@ -4,12 +4,12 @@ let Media = require(__dirname + "/../models/media.js");
 let router = express.Router();
 
 
-router.get('/', (req, res) => {
-    Media.find().then(resultado => {
-        res.status(200)
-            .send({medias: resultado});
-    }); 
-});
+    router.get('/', (req, res) => {
+        Media.find().then(resultado => {
+            res.status(200)
+                .send({medias: resultado});
+        }); 
+    });
 
 router.get('/busqueda', async (req, res) => {
     const titulo = req.query.titulo;
@@ -48,6 +48,27 @@ router.post('/batch', async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ error: 'Error retrieving medias' });
+    }
+});
+
+router.get('/paginated', async (req, res) => {
+    try {
+        const offset = parseInt(req.query.offset) || 0;
+        const limit = parseInt(req.query.limit) || 2500;
+
+        const resultado = await Media.find()
+            .skip(offset)
+            .limit(limit);
+
+        res.status(200).send({
+            medias: resultado
+        });
+
+    } catch (error) {
+        console.error("Error retrieving medias:", error);
+        res.status(500).json({
+            error: "Error retrieving medias"
+        });
     }
 });
 
