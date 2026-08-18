@@ -1,15 +1,62 @@
 const express=require("express");
+const crypto = require("crypto");
 
 let Media = require(__dirname + "/../models/media.js");
+let MediaHistory = require(__dirname + "/../models/mediaHistory.js");
 let router = express.Router();
 
+function getImageHash(imagen) {
+    if (!imagen) {
+        return null;
+    }
 
-    router.get('/', (req, res) => {
-        Media.find().then(resultado => {
-            res.status(200)
-                .send({medias: resultado});
-        }); 
-    });
+    return crypto
+        .createHash('sha256')
+        .update(imagen)
+        .digest('hex');
+}
+
+function prepararParaHistorial(media) {
+    const objeto = media.toObject
+        ? media.toObject()
+        : { ...media };
+
+    objeto.imagen = getImageHash(objeto.imagen);
+
+    return objeto;
+}
+
+function obtenerCambios(objetoAnterior, objetoNuevo) {
+    const cambios = [];
+
+    const campos = new Set([
+        ...Object.keys(objetoAnterior),
+        ...Object.keys(objetoNuevo)
+    ]);
+
+    for (const campo of campos) {
+
+        const valorAnterior = objetoAnterior[campo];
+        const valorNuevo = objetoNuevo[campo];
+
+        if (JSON.stringify(valorAnterior) !== JSON.stringify(valorNuevo)) {
+            cambios.push({
+                campo: campo,
+                anterior: valorAnterior,
+                nuevo: valorNuevo
+            });
+        }
+    }
+
+    return cambios;
+}
+
+router.get('/', (req, res) => {
+    Media.find().then(resultado => {
+        res.status(200)
+            .send({medias: resultado});
+    }); 
+});
 
 router.get('/busqueda', async (req, res) => {
     const titulo = req.query.titulo;
@@ -141,41 +188,100 @@ router.post('/', (req, res) => {
     });
 });
 
-router.put('/:id', (req, res) => {
-    Media.findByIdAndUpdate(req.params.id, {
-        $set: {
+router.put('/:id', async (req, res) => {
 
-        titulo:req.body.titulo,
-        imagen:req.body.imagen,
+    try {
 
-        tipo:req.body.tipo,
-        genero:req.body.genero,
-        plataforma:req.body.plataforma,
+        // 1. Obtener el objeto antiguo
+        const mediaAnterior = await Media.findById(req.params.id);
 
-        fechaLanzamiento:req.body.fechaLanzamiento,
-        fechaTerminado:req.body.fechaTerminado,
-
-        notaObjetiva:req.body.notaObjetiva,
-        notaSubjetiva:req.body.notaSubjetiva,
-
-        desarrolladora:req.body.desarrolladora,
-        subgenero:req.body.subgenero,
-
-        fechaCreacion:req.body.fechaCreacion,
-        fechaModificacion:req.body.fechaModificacion,
-
-        anotaciones:req.body.anotaciones,
-        review:req.body.review,
-        tiempoJuego:req.body.tiempoJuego,
-
-        nombrePersonal:req.body.nombrePersonal
-        
+        if (!mediaAnterior) {
+            return res.status(404).json({
+                error: "Media not found"
+            });
         }
-    }, {new: true}).then(resultado => {
-       
-    }).catch(error => {
-        console.error({ error: "Error modifying media", details: error });
-    });
+
+        // 2. Crear el objeto nuevo
+        const objetoNuevo = {
+
+            titulo: req.body.titulo,
+            imagen: req.body.imagen,
+
+            tipo: req.body.tipo,
+            genero: req.body.genero,
+            plataforma: req.body.plataforma,
+
+            fechaLanzamiento: req.body.fechaLanzamiento,
+            fechaTerminado: req.body.fechaTerminado,
+
+            notaObjetiva: req.body.notaObjetiva,
+            notaSubjetiva: req.body.notaSubjetiva,
+
+            desarrolladora: req.body.desarrolladora,
+            subgenero: req.body.subgenero,
+
+            fechaCreacion: req.body.fechaCreacion,
+            fechaModificacion: req.body.fechaModificacion,
+
+            anotaciones: req.body.anotaciones,
+            review: req.body.review,
+            tiempoJuego: req.body.tiempoJuego,
+
+            nombrePersonal: req.body.nombrePersonal
+        };
+
+        // 3. Preparar las copias para el historial
+        //    (imagen -> hash)
+        const objetoAnteriorHistorial =
+            prepararParaHistorial(mediaAnterior);
+
+        const objetoNuevoHistorial =
+            prepararParaHistorial(objetoNuevo);
+
+        // 4. Averiguar qué ha cambiado
+        const cambios = obtenerCambios(
+            objetoAnteriorHistorial,
+            objetoNuevoHistorial
+        );
+
+        // 5. Actualizar el Media
+        const resultado = await Media.findByIdAndUpdate(
+            req.params.id,
+            {
+                $set: objetoNuevo
+            },
+            {
+                new: true
+            }
+        );
+
+        // 6. Crear el historial
+        await MediaHistory.create({
+            mediaId: resultado._id,
+
+            fechaModificacion: resultado.fechaModificacion,
+
+            objetoAnterior: objetoAnteriorHistorial,
+
+            objetoNuevo: objetoNuevoHistorial,
+
+            cambios: cambios
+        });
+
+        // 7. Responder a Angular
+        res.status(200).send({
+            media: resultado
+        });
+
+    } catch (error) {
+
+        console.error("Error modifying media:", error);
+
+        res.status(500).json({
+            error: "Error modifying media",
+            details: error.message
+        });
+    }
 });
 
 module.exports = router;
