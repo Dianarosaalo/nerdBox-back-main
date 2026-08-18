@@ -72,6 +72,23 @@ router.get('/paginated', async (req, res) => {
     }
 });
 
+router.get('/actividad', async (req, res) => {
+    try {
+        const resultado = await Media.find()
+            .select('-imagen');
+
+        res.status(200).send({
+            medias: resultado
+        });
+
+    } catch (error) {
+        console.error("Error retrieving media activity:", error);
+        res.status(500).json({
+            error: "Error retrieving media activity"
+        });
+    }
+});
+
 router.get('/:id', (req, res) => {
     Media.findById(req.params['id']).then(resultado => {
         res.status(200).send({media: resultado});
